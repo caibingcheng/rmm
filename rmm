@@ -1,0 +1,180 @@
+#!/bin/sh
+
+VERSION=0.1.0
+version()
+{
+    echo "rmm version: V"$VERSION
+}
+
+TRASHPATH=0
+checkTrash()
+{
+    TRASHPATH=$HOME/.trash
+    if [ ! -d "$TRASHPATH" ];then
+        mkdir $TRASHPATH/
+    fi
+}
+
+DATEPATH=0
+checkDate()
+{
+    DATEPATH=`date +%Y%m%d`
+    if [ ! -d "$TRASHPATH/$DATEPATH/" ];then
+        mkdir $TRASHPATH/$DATEPATH/
+        touch $TRASHPATH/$DATEPATH/removelog
+        touch $TRASHPATH/$DATEPATH/restorelog
+    fi
+}
+
+checkExist()
+{
+    EXIST=0
+    if [ -d "$1" ];then
+        EXIST=1
+    fi
+    if [ -f "$1" ];then
+        EXIST=1
+    fi
+    echo $EXIST
+    return $?
+}
+
+showTrashDate()
+{
+    for dir in $TRASHPATH/*
+    do
+        if [ -d "$dir" ]; then
+            BASENAME=$(basename $dir)
+            echo $BASENAME
+        fi
+    done
+}
+checkDeleteTrash()
+{
+    EXIST=0
+    dir=$TRASHPATH/$1
+    if [ -d "$dir" ];then
+        EXIST=1
+    fi
+    if [ -f "$dir" ];then
+        EXIST=1
+    fi
+    if [ -z "$1" ];then
+        EXIST=0
+    fi
+    echo $EXIST
+    return $?
+}
+deleteTrashByDate()
+{
+    showTrashDate
+    echo -n "delete: "
+    read dir
+    exist=$(checkDeleteTrash $dir)
+    echo $exist
+}
+
+SRC=""
+DST=""
+EMPTY=1
+showBack()
+{
+    EMPTY=1
+    for dir in $TRASHPATH/*
+    do
+        if [ -d "$dir" ]; then
+            BASENAME=$(basename $dir)
+            if [ -n "$(cat $dir/removelog)" ];
+            then
+                if [ -z "$1" ];then
+                    echo $BASENAME":"
+                fi
+                EMPTY=0
+            fi
+            while read line
+            do
+                src=`echo $line|awk -F ' ' '{print $1}'`
+                dst=`echo $line|awk -F ' ' '{print $2}'`
+                if [ -n "$1" ];then
+                    if [ "$1" = "$BASENAME/$(basename $dst)" ];then
+                        sed -i "/$(basename $dst)/d" $dir/removelog
+                        echo $src
+                        return $?
+                    fi
+                else
+                    echo "    --  $src --> $BASENAME/$(basename $dst)"
+                fi
+            done < $dir/removelog
+        fi
+    done
+}
+back()
+{
+    showBack
+    if [ $EMPTY -eq 1 ];then
+        return
+    fi
+    echo -n "restore: "
+    read dir
+    exist=$(checkDeleteTrash $dir)
+    if [ $exist -eq 0 ];then
+        echo "Invalid $dir"
+        return
+    fi
+    dst=$(showBack $dir)
+    echo "Restore $dir --> $dst"
+    echo "Restore $dir --> $dst" >> $TRASHPATH/$DATEPATH/restorelog
+    mv -f $TRASHPATH/$dir $dst
+}
+
+help()
+{
+    echo '--rmm: help information'
+}
+
+checkTrash
+checkDate
+
+TEMP=$(getopt -q -o s,f,i,I,r,R,d,v,b --long help,show,version,delete,back -- "$@")
+if [ "$?" != "0" ]; then
+    echo '--rmm: Invalid option'
+    exit 1
+fi
+eval set -- "$TEMP"
+
+while true; do
+    case "$1" in
+        --help)
+            help
+            exit 1;;
+        --version)
+            version
+            exit 1;;
+        -s|--show)
+            showTrashDate
+            shift 1;;
+        -d|--delete)
+            deleteTrashByDate
+            shift 1;;
+        -b|--back)
+            back
+            shift 1;;
+        "--") shift; break;;
+        *)
+            shift;;
+    esac
+done
+
+for arg in $@; do
+    EXIST=$(checkExist $arg)
+    if [ $EXIST -eq 1 ]; then
+        head="$(date "+%H_%M_%S_%N")"_
+        BASENAME=$(basename $arg)
+        src=$(readlink -f $arg)
+        dst=$TRASHPATH/$DATEPATH/$head$BASENAME
+        echo "$src $dst" >> $TRASHPATH/$DATEPATH/removelog
+        mv -f $src $dst
+    fi
+done
+
+# tree ~/.trash
