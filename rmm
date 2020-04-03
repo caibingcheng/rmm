@@ -96,10 +96,13 @@ showBack()
                 src=`echo $line|awk -F ' ' '{print $1}'`
                 dst=`echo $line|awk -F ' ' '{print $2}'`
                 if [ -n "$1" ];then
-                    if [ "$1" = "$BASENAME/$(basename $dst)" ];then
-                        sed -i "/$(basename $dst)/d" $dir/removelog
-                        echo $src
-                        return $?
+                    flag=$(echo $BASENAME/$(basename $dst) | awk "/$(basename $1)/")
+                    echo $flag
+                    if [ -n "$flag" ];then
+                        sed -i "/$(basename $dst)/d" $dir/removelog                    
+                        echo "Restore $BASENAME/$(basename $dst) --> $src"
+                        echo "Restore $BASENAME/$(basename $dst) --> $src" >> $TRASHPATH/$DATEPATH/restorelog
+                        mv -f $dst $src
                     fi
                 else
                     echo "    --  $src --> $BASENAME/$(basename $dst)"
@@ -121,15 +124,15 @@ back()
         echo "Invalid $dir"
         return
     fi
-    dst=$(showBack $dir)
-    echo "Restore $dir --> $dst"
-    echo "Restore $dir --> $dst" >> $TRASHPATH/$DATEPATH/restorelog
-    mv -f $TRASHPATH/$dir $dst
+    showBack $dir
 }
 
 help()
 {
     echo '--rmm: help information'
+    echo '       --help     get help information'
+    echo '       --version  get rmm version'
+    echo '       -b --back  restore the delete files[dirs]'
 }
 
 checkTrash
