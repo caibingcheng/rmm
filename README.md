@@ -2,6 +2,19 @@
 
 欢迎Pull Request
 
+### install
+```
+cd ~
+mkdir bin
+cd ./bin
+git clone git@gitee.com:jerry323/rmm.git rmm
+echo export PATH=$PATH:$HOME/bin/rmm >> ~/.bashrc
+source ~/.bashrc
+
+#以上完成配置，如果遇到权限问题
+chmod a+x ~/bin/rmm
+```
+
 ### Usage
 - 删除
 ```
@@ -31,6 +44,6 @@ alias rm="rmm"
 
 [] help命令
 
-[] 永久删除
+[o] 永久删除
 
 [] ...
