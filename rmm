@@ -138,7 +138,7 @@ help()
 checkTrash
 checkDate
 
-TEMP=$(getopt -q -o s,f,i,I,r,R,d,v,b --long help,show,version,delete,back -- "$@")
+TEMP=$(getopt -q -o v,s,f,i,I,r,R,d,v,b --long help,show,version,delete,back -- "$@")
 if [ "$?" != "0" ]; then
     echo '--rmm: Invalid option'
     exit 1
@@ -150,7 +150,7 @@ while true; do
         --help)
             help
             exit 1;;
-        --version)
+        -v|--version)
             version
             exit 1;;
         -s|--show)
@@ -175,8 +175,13 @@ for arg in $@; do
         BASENAME=$(basename $arg)
         src=$(readlink -f $arg)
         dst=$TRASHPATH/$DATEPATH/$head$BASENAME
-        echo "$src $dst" >> $TRASHPATH/$DATEPATH/removelog
-        mv -f $src $dst
+        if [ -h "$arg" ] # soft link file
+        then
+            rm -fr $arg
+        else
+            echo "$src $dst" >> $TRASHPATH/$DATEPATH/removelog
+            mv -f $src $dst
+        fi
     fi
 done
 
