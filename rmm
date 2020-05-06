@@ -71,7 +71,9 @@ deleteTrashByDate()
     echo -n "delete: "
     read dir
     exist=$(checkDeleteTrash $dir)
-    echo $exist
+    if [ -n $exist ]; then
+        /bin/rm -fr $TRASHPATH/$dir
+    fi
 }
 
 SRC=""
@@ -130,15 +132,16 @@ back()
 help()
 {
     echo '--rmm: help information'
-    echo '       --help     get help information'
-    echo '       --version  get rmm version'
-    echo '       -b --back  restore the delete files[dirs]'
+    echo '       -h --help    get help information'
+    echo '       --version    get rmm version'
+    echo '       -b --back    restore the delete files[dirs]'
+    echo '       -d --delete  delete by date'
 }
 
 checkTrash
 checkDate
 
-TEMP=$(getopt -q -o v,s,f,i,I,r,R,d,v,b --long help,show,version,delete,back -- "$@")
+TEMP=$(getopt -q -o v,s,f,i,I,r,R,d,v,b,h --long help,show,version,delete,back -- "$@")
 if [ "$?" != "0" ]; then
     echo '--rmm: Invalid option'
     exit 1
@@ -147,7 +150,7 @@ eval set -- "$TEMP"
 
 while true; do
     case "$1" in
-        --help)
+        -h|--help)
             help
             exit 1;;
         -v|--version)
