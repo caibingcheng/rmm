@@ -39,13 +39,16 @@ checkExist()
     return $?
 }
 
+EXIST=0
 showTrashDate()
 {
+    EXIST=0
     for dir in $TRASHPATH/*
     do
         if [ -d "$dir" ]; then
             BASENAME=$(basename $dir)
             echo $BASENAME
+            EXIST=1
         fi
     done
 }
@@ -68,6 +71,9 @@ checkDeleteTrash()
 deleteTrashByDate()
 {
     showTrashDate
+    if [ $EXIST -eq 0 ]; then
+        return
+    fi
     echo -n "delete: "
     read dir
     exist=$(checkDeleteTrash $dir)
@@ -139,7 +145,6 @@ help()
 }
 
 checkTrash
-checkDate
 
 TEMP=$(getopt -q -o v,s,f,i,I,r,R,d,v,b,h --long help,show,version,delete,back -- "$@")
 if [ "$?" != "0" ]; then
@@ -174,6 +179,7 @@ done
 for arg in $@; do
     EXIST=$(checkExist $arg)
     if [ $EXIST -eq 1 ]; then
+        checkDate
         head="$(date "+%H_%M_%S_%N")"_
         BASENAME=$(basename $arg)
         src=$(readlink -f $arg)
