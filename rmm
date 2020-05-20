@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION=0.1.0
+VERSION=0.5.0
 version()
 {
     echo "rmm version: V"$VERSION
@@ -76,9 +76,22 @@ deleteTrashByDate()
     fi
     echo -n "delete: "
     read dir
-    exist=$(checkDeleteTrash $dir)
-    if [ -n $exist ]; then
-        /bin/rm -fr $TRASHPATH/$dir
+    if [ "$dir" != "" ]; then
+        local exist=$(checkDeleteTrash $dir)
+        if [ -n $exist ]; then
+            /bin/rm -fr $TRASHPATH/$dir
+        fi
+    fi
+}
+deleteTrashAll()
+{
+    local empty=$(ls ~/.trash|wc -l)
+    if [ $empty != "0" ]; then
+        echo -n "delete all? [y/n]: "
+        read order
+        if [ "$order" = "y" ]; then
+            /bin/rm -fr $TRASHPATH/*
+        fi
     fi
 }
 
@@ -127,28 +140,33 @@ back()
     fi
     echo -n "restore: "
     read dir
-    exist=$(checkDeleteTrash $dir)
-    if [ $exist -eq 0 ];then
-        echo "Invalid $dir"
-        return
+    if [ "$dir" != "" ]; then
+        exist=$(checkDeleteTrash $dir)
+        if [ $exist -eq 0 ];then
+            echo "Invalid $dir"
+            return
+        fi
+        showBack $dir
     fi
-    showBack $dir
 }
 
 help()
 {
     echo '--rmm: help information'
-    echo '       -h --help    get help information'
     echo '       --version    get rmm version'
+    echo '       -h --help    get help information'
+    echo '       -s --show    show trash bt date'
     echo '       -b --back    restore the delete files[dirs]'
     echo '       -d --delete  delete by date'
+    echo '       -D           delete all'
 }
 
 checkTrash
 
-TEMP=$(getopt -q -o v,s,f,i,I,r,R,d,v,b,h --long help,show,version,delete,back -- "$@")
+TEMP=$(getopt -q -o v,s,f,i,I,r,R,d,v,b,h,D --long help,show,version,delete,back -- "$@")
 if [ "$?" != "0" ]; then
-    echo '--rmm: Invalid option'
+    echo '--rmm: Invalid option' $@
+    help
     exit 1
 fi
 eval set -- "$TEMP"
@@ -166,6 +184,9 @@ while true; do
             shift 1;;
         -d|--delete)
             deleteTrashByDate
+            shift 1;;
+        -D)
+            deleteTrashAll
             shift 1;;
         -b|--back)
             back
