@@ -6,19 +6,17 @@ version()
     echo "rmm version: V"$VERSION
 }
 
-TRASHPATH=0
+TRASHPATH=$HOME/.trash
 checkTrash()
 {
-    TRASHPATH=$HOME/.trash
     if [ ! -d "$TRASHPATH" ];then
         mkdir $TRASHPATH/
     fi
 }
 
-DATEPATH=0
+DATEPATH=`date +%Y%m%d`
 checkDate()
 {
-    DATEPATH=`date +%Y%m%d`
     if [ ! -d "$TRASHPATH/$DATEPATH/" ];then
         mkdir $TRASHPATH/$DATEPATH/
         touch $TRASHPATH/$DATEPATH/removelog
@@ -158,7 +156,6 @@ showBack()
                 dst=`echo $line|awk -F ' ' '{print $2}'`
                 if [ -n "$1" ];then
                     flag=$(echo $BASENAME/$(basename $dst) | awk "/$(basename $1)/")
-                    echo $flag
                     if [ -n "$flag" ];then
                         sed -i "/$(basename $dst)/d" $dir/removelog                    
                         echo "Restore $BASENAME/$(basename $dst) --> $src"
