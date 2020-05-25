@@ -6,19 +6,17 @@ version()
     echo "rmm version: V"$VERSION
 }
 
-TRASHPATH=0
+TRASHPATH=$HOME/.trash
 checkTrash()
 {
-    TRASHPATH=$HOME/.trash
     if [ ! -d "$TRASHPATH" ];then
         mkdir $TRASHPATH/
     fi
 }
 
-DATEPATH=0
+DATEPATH=`date +%Y%m%d`
 checkDate()
 {
-    DATEPATH=`date +%Y%m%d`
     if [ ! -d "$TRASHPATH/$DATEPATH/" ];then
         mkdir $TRASHPATH/$DATEPATH/
         touch $TRASHPATH/$DATEPATH/removelog
@@ -39,18 +37,57 @@ checkExist()
     return $?
 }
 
+checkSize()
+{
+    local empty=$(ls $TRASHPATH|wc -l)
+    if [ $empty != "0" ]; then
+        size="`du -s $TRASHPATH`"
+        for i in $size
+        do
+            size=$i
+            break
+        done
+        if [ $size -gt 1048576 ]; then
+            size="`du -s -h $TRASHPATH`"
+            for i in $size
+            do
+                size=$i
+                break
+            done
+            echo Trash is too large: $size
+        fi
+    fi
+}
+
 EXIST=0
 showTrashDate()
 {
     EXIST=0
-    for dir in $TRASHPATH/*
-    do
-        if [ -d "$dir" ]; then
-            BASENAME=$(basename $dir)
-            echo $BASENAME
-            EXIST=1
-        fi
-    done
+    local empty=$(ls $TRASHPATH|wc -l)
+    if [ $empty != "0" ]; then
+        for dir in $TRASHPATH/*
+        do
+            if [ -d "$dir" ]; then
+                BASENAME=$(basename $dir)
+                size="`du -s -h $dir`"
+                for i in $size
+                do
+                    size=$i
+                    break
+                done
+                echo $BASENAME "-->" $size
+                EXIST=1
+            fi
+        done
+        size="`du -s -h $TRASHPATH`"
+        for i in $size
+        do
+            size=$i
+            break
+        done
+        echo 'Total    -->' $size
+    fi
+    checkSize
 }
 checkDeleteTrash()
 {
@@ -85,7 +122,8 @@ deleteTrashByDate()
 }
 deleteTrashAll()
 {
-    local empty=$(ls ~/.trash|wc -l)
+    checkSize
+    local empty=$(ls $TRASHPATH|wc -l)
     if [ $empty != "0" ]; then
         echo -n "delete all? [y/n]: "
         read order
@@ -118,7 +156,6 @@ showBack()
                 dst=`echo $line|awk -F ' ' '{print $2}'`
                 if [ -n "$1" ];then
                     flag=$(echo $BASENAME/$(basename $dst) | awk "/$(basename $1)/")
-                    echo $flag
                     if [ -n "$flag" ];then
                         sed -i "/$(basename $dst)/d" $dir/removelog                    
                         echo "Restore $BASENAME/$(basename $dst) --> $src"
@@ -214,5 +251,3 @@ for arg in $@; do
         fi
     fi
 done
-
-# tree ~/.trash
