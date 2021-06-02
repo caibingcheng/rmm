@@ -7,9 +7,9 @@
 cd ~
 mkdir bin
 cd ./bin
-git clone git@gitee.com:jerry323/rmm.git rmm
-echo export PATH=$PATH:$HOME/bin/rmm >> ~/.bashrc
-source ~/.bashrc
+git clone git@github.com:caibingcheng/rmm.git rmm
+cd ./rmm
+rmm -i
 
 #以上完成配置，如果遇到权限问题
 chmod a+x ~/bin/rmm
@@ -41,10 +41,10 @@ rmm -b  #列出可恢复项
 ```
 
 ### TODO
-[] 恢复文件有冲突，需要重命名
 
-[] help命令
-
-[o] 永久删除
-
-[] ...
+- [x] help命令
+- [x] 永久删除
+- [x] root权限永久删除
+- [x] 部分永久删除和全部永久删除
+- [ ] 恢复文件有冲突，需要重命名
+- [ ] ...

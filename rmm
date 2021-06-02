@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 VERSION=0.5.0
 version()
@@ -107,12 +107,17 @@ checkDeleteTrash()
 }
 deleteTrashByDate()
 {
-    showTrashDate
-    if [ $EXIST -eq 0 ]; then
-        return
+    if [ "$3" == "" ]; then
+        showTrashDate
+        if [ $EXIST -eq 0 ]; then
+            return
+        fi
+        echo -n "delete: "
+        read dir
+    else
+        echo "delete: $3"
+        dir=$3
     fi
-    echo -n "delete: "
-    read dir
     if [ "$dir" != "" ]; then
         local exist=$(checkDeleteTrash $dir)
         if [ -n $exist ]; then
@@ -122,13 +127,24 @@ deleteTrashByDate()
 }
 deleteTrashAll()
 {
-    checkSize
+    # checkSize
     local empty=$(ls $TRASHPATH|wc -l)
     if [ $empty != "0" ]; then
         echo -n "delete all? [y/n]: "
         read order
         if [ "$order" = "y" ]; then
-            /bin/rm -fr $TRASHPATH/*
+            # /bin/rm -fr $TRASHPATH/*
+            empty_dir=$TRASHPATH/blank
+            if [ ! -d $empty_dir ]; then
+                mkdir $empty_dir
+            fi
+            echo "clearing..."
+            if [ "$1" == "f" ]; then
+                sudo rsync --delete-before -d $empty_dir/ $TRASHPATH/
+            else
+                rsync --delete-before -d $empty_dir/ $TRASHPATH/
+            fi
+            echo "clear done."
         fi
     fi
 }
@@ -157,7 +173,7 @@ showBack()
                 if [ -n "$1" ];then
                     flag=$(echo $BASENAME/$(basename $dst) | awk "/$(basename $1)/")
                     if [ -n "$flag" ];then
-                        sed -i "/$(basename $dst)/d" $dir/removelog                    
+                        sed -i "/$(basename $dst)/d" $dir/removelog
                         echo "Restore $BASENAME/$(basename $dst) --> $src"
                         echo "Restore $BASENAME/$(basename $dst) --> $src" >> $TRASHPATH/$DATEPATH/restorelog
                         mv -f $dst $src
@@ -186,6 +202,13 @@ back()
         showBack $dir
     fi
 }
+install()
+{
+    echo export PATH=$PATH:$(pwd) >> ~/.bashrc
+    . ~/.bashrc
+    chmod a+x $(pwd)/rmm
+}
+
 
 help()
 {
@@ -193,14 +216,16 @@ help()
     echo '       --version    get rmm version'
     echo '       -h --help    get help information'
     echo '       -s --show    show trash bt date'
+    echo '       -l --list    list trash bt date'
     echo '       -b --back    restore the delete files[dirs]'
     echo '       -d --delete  delete by date'
     echo '       -D           delete all'
+    echo '       -f           delete all by root permission'
 }
 
 checkTrash
 
-TEMP=$(getopt -q -o v,s,f,i,I,r,R,d,v,b,h,D --long help,show,version,delete,back -- "$@")
+TEMP=$(getopt -q -o v,s,l,f,i,I,r,R,d,v,b,h,D --long help,show,list,force,version,delete,back -- "$@")
 if [ "$?" != "0" ]; then
     echo '--rmm: Invalid option' $@
     help
@@ -213,14 +238,23 @@ while true; do
         -h|--help)
             help
             exit 1;;
+        -i|--install)
+            install
+            exit 1;;
         -v|--version)
             version
             exit 1;;
         -s|--show)
             showTrashDate
             shift 1;;
+        -l|--list)
+            showTrashDate
+            shift 1;;
         -d|--delete)
-            deleteTrashByDate
+            deleteTrashByDate $@
+            shift 1;;
+        -f|--force)
+            deleteTrashAll "f"
             shift 1;;
         -D)
             deleteTrashAll
@@ -244,10 +278,10 @@ for arg in $@; do
         dst=$TRASHPATH/$DATEPATH/$head$BASENAME
         if [ -h "$arg" ] # soft link file
         then
-            rm -fr $arg
+            rm -fr "$arg"
         else
             echo "$src $dst" >> $TRASHPATH/$DATEPATH/removelog
-            mv -f $src $dst
+            mv -f "$src" "$dst"
         fi
     fi
 done
