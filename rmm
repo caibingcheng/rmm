@@ -139,7 +139,7 @@ deleteTrashAll()
                 mkdir $empty_dir
             fi
             echo "clearing..."
-            if [ "$1" == "f" ]; then
+            if [ "$1" == "F" ]; then
                 sudo rsync --delete-before -d $empty_dir/ $TRASHPATH/
             else
                 rsync --delete-before -d $empty_dir/ $TRASHPATH/
@@ -225,7 +225,7 @@ help()
 
 checkTrash
 
-TEMP=$(getopt -q -o v,s,l,f,i,I,r,R,d,v,b,h,D --long help,show,list,force,version,delete,back -- "$@")
+TEMP=$(getopt -q -o v,s,l,f,F,i,I,r,R,d,v,b,h,D --long help,show,list,force,version,delete,back -- "$@")
 if [ "$?" != "0" ]; then
     echo '--rmm: Invalid option' $@
     help
@@ -253,8 +253,8 @@ while true; do
         -d|--delete)
             deleteTrashByDate $@
             shift 1;;
-        -f|--force)
-            deleteTrashAll "f"
+        -F|--force)
+            deleteTrashAll "F"
             shift 1;;
         -D)
             deleteTrashAll
